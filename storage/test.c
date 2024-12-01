@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "account.h"
 #include "message.h"
+#include "room.h"
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
@@ -49,19 +50,44 @@ int main() {
 
 // Test for message.h
 
-    message new_message = {1, time(0) , "Test new message here"};
-    message* current_messages = create_message(1, &new_message);
+//    message new_message = {1, time(0) , "Test new message here"};
+//    message* current_messages = create_message(1, &new_message);
+//
+//
+//    for(int i =0; i < message_count; i++){
+//        printf("[Infor] Found One Message:\n");
+//        printf("[Infor] %d\n",current_messages[i].sender_id);
+//        printf("[Infor] %s",ctime(&current_messages[i].time));
+//        printf("[Infor] %s\n",current_messages[i].content);
+//    }
+//    free(current_messages);
 
 
-    for(int i =0; i < message_count; i++){
-        printf("[Infor] Found One Message:\n");
-        printf("[Infor] %d\n",current_messages[i].sender_id);
-        printf("[Infor] %s",ctime(&current_messages[i].time));
-        printf("[Infor] %s\n",current_messages[i].content);
-    }
-
-    free(current_messages);
+//    load_rooms_from_file();
+//
+//    room new_room = {room_count, {101, 103}, 2};
+//    create_room(&new_room);
+//
+//    room* room_data = find_all_member_in_room(1);
+//    if (room_data) {
+//        printf("Room ID: %d\nMembers: ", room_data->room_id);
+//        for (int i = 0; i < room_data->member_count; i++) {
+//            printf("%d ", room_data->member_ids[i]);
+//        }
+//        printf("\n");
+//    }
+//
+//    room* room_data = find_all_room_by_user_id(103);
+//
+//    for(int i = 0; i < result_count; i++){
+//        printf("[Infor] Room ID: %d\n[Infor] Members: ", room_data[i].room_id);
+//        for (int j = 0; j < room_data[i].member_count; j++) {
+//            printf("%d ", room_data[i].member_ids[j]);
+//        }
+//        printf("\n");
+//    }
 
     return 0;
+
 }
 

@@ -16,6 +16,7 @@ typedef struct {
 
 int account_count = 0;
 
+
 int save_account(account* data){
     FILE* file = fopen("account.txt", "a"); // Open the file in append mode
     if (file == NULL) {
