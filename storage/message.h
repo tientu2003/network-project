@@ -19,7 +19,7 @@ int message_count = 0;
 // Function to get all messages by a given room ID
 message* load_message(int room_id) {
     char filename[50];
-    snprintf(filename, sizeof(filename), "message_%d.txt", room_id);
+    snprintf(filename, sizeof(filename), "./message_data/message_%d.txt", room_id);
 
     FILE *file = fopen(filename, "r+");
     if (file == NULL) {
@@ -79,7 +79,7 @@ message* load_message(int room_id) {
 // Function to append a new message and return all messages
 message* create_message(int room_id, message* new_message) {
     char filename[50];
-    snprintf(filename, sizeof(filename), "message_%d.txt", room_id);
+    snprintf(filename, sizeof(filename), "./message_data/message_%d.txt", room_id);
 
     FILE *file = fopen(filename, "a+");
     if (file == NULL) {
