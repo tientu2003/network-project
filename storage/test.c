@@ -2,6 +2,7 @@
 #include "account.h"
 #include "message.h"
 #include "room.h"
+#include "friend.h"
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
@@ -62,7 +63,7 @@ int main() {
 //    }
 //    free(current_messages);
 
-
+//    Test for room.h
 //    load_rooms_from_file();
 //
 //    room new_room = {room_count, {101, 103}, 2};
@@ -87,7 +88,43 @@ int main() {
 //        printf("\n");
 //    }
 
-    return 0;
+//  Test for friend.h
+//    load_friends_from_file();
+//
+//    if(add_friend(1,2)){
+//        printf("[Error] friend already added\n");
+//    }else{
+//        friend_t* friend_list_a = find_user(1);
+//        printf("[Infor] User Id: %d\n", friend_list_a->user_id);
+//        printf("[Infor] Friend List: ");
+//        for(int i = 0; i < friend_list_a->friend_number; i++){
+//            printf("%d ", friend_list_a->friend_ids[i]);
+//        }
+//        printf("\n");
+//    }
+//
+//    add_friend(2,3);
+//   friend_t* friend_list_b = find_user(2);
+//    printf("[Infor] User Id: %d\n", friend_list_b->user_id);
+//    printf("[Infor] Friend List: ");
+//    for(int i = 0; i < friend_list_b->friend_number; i++){
+//        printf("%d ", friend_list_b->friend_ids[i]);
+//    }
+//    printf("\n");
+//    if(delete_friend(2,3)){
+//        printf("[Error] Can not delete friendship\n");
+//    }
+//
+//
+//    friend_list_b = find_user(2);
+//    printf("[Infor] User Id: %d\n", friend_list_b->user_id);
+//    printf("[Infor] Friend List: ");
+//    for(int i = 0; i < friend_list_b->friend_number; i++){
+//        printf("%d ", friend_list_b->friend_ids[i]);
+//    }
+//    printf("\n");
 
+
+    return 0;
 }
 
