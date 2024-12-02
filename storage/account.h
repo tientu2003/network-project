@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-
+#define MAX_ACCOUNT 100
 #ifndef ACCOUNT_H
 #define ACCOUNT_H
 
@@ -15,6 +15,7 @@ typedef struct {
 } account;
 
 int account_count = 0;
+account accounts[MAX_ACCOUNT];
 
 
 int save_account(account* data){

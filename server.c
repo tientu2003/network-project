@@ -6,58 +6,13 @@
 #include <pthread.h>
 #include <time.h>
 #include "msg.h"
-#include "storage/account.h"
 
 // Thread argument structure
 typedef struct {
     int client_socket;
     struct sockaddr_in client_addr;
 } ClientArgs;
-account accounts[1000];
 
-int login(msg_format msg,int client_socket){
-    char username[30],password[30];
-    msg_format response;
-    sscanf(msg.payload,"%s %s",username,password);
-    if(check_credentials(accounts,username,password)){
-        response.header.code=CODE_LOGIN_SUCCESS;
-    }
-    else{
-        response.header.code=CODE_LOGIN_FAILED;
-    }
-    response.header.type=AUTH_RES;
-    response.header.length=0;
-    response.header.timestamp=(uint32_t)time(NULL);
-    if (send(client_socket, &response, sizeof(response), 0) <= 0) {
-        perror("[Error] Failed to send response");
-    }
-    return (response.header.code==CODE_LOGIN_SUCCESS)?1:0;
-}
-int registerAccount(msg_format msg,int client_socket){
-    char username[30],password[30];
-    msg_format response;
-    sscanf(msg.payload,"%s %s",username,password);
-    int res;
-    res=find_account(accounts,username);
-    if(res>-1){
-        response.header.code=CODE_REGISTRATION_FAILED;
-    }
-    else{
-        response.header.code=CODE_REGISTRATION_SUCCESS;
-        accounts[account_count].id=account_count;
-        strcpy(accounts[account_count].user_name,username);
-        strcpy(accounts[account_count].password,password);
-        account_count++;
-        save_account(accounts);
-    }
-    response.header.type=REGI_RES;
-    response.header.length=0;
-    response.header.timestamp=(uint32_t)time(NULL);
-    if (send(client_socket, &response, sizeof(response), 0) <= 0) {
-        perror("[Error] Failed to send response");
-    }
-    return (response.header.code==CODE_REGISTRATION_SUCCESS)?1:0;
-}
 // Handle client communication
 void *handle_client(void *arg) {
     ClientArgs *client_args = (ClientArgs *)arg;
@@ -69,7 +24,7 @@ void *handle_client(void *arg) {
     // Get client IP address
     inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
     printf("[Infor] Connected to client: %s:%d\n", client_ip, ntohs(client_addr.sin_port));
-    int auth;
+    int success;
     do{
         ssize_t received = recv(client_socket, &msg, sizeof(msg), 0);
         if (received <= 0) {
@@ -78,26 +33,33 @@ void *handle_client(void *arg) {
             free(client_args);
             return NULL;
         }
-        if(msg.header.type==AUTH_REQ){
-            auth=login(msg,client_socket);
+        switch (msg.header.type) {
+            case AUTH_REQ:
+                success=server_login(msg,client_socket);
+                break;
+            case REGI_REQ:
+                success=server_register_account(msg,client_socket);
+                break;
+            case USER_LIST_REQ:
+                break;
+            case PRIVATE_MSG:
+                break;
+            case GROUP_MSG:
+                break;
+            case MESSAGE_LIST_REQ:
+                break;
+            case GROUP_REQ:
+                break;
+            case FRIEND_REQ:
+                break;
+            case LOGOUT_REQ:
+                break;
+            default:
+                success = -1;
+                break;
         }
-        else if(msg.header.type==REGI_REQ){
-            auth=registerAccount(msg,client_socket);
-        }
-    }while(auth!=1);
-    // Prepare and send response
-    msg_format response;
-    response.header.type = msg.header.type;
-    response.header.code = 0; // No error
-    response.header.length = snprintf(response.payload, MAX_PAYLOAD_SIZE, "Hello, client!");
-    response.header.timestamp = (uint32_t)time(NULL);
-
-    if (send(client_socket, &response, sizeof(response), 0) <= 0) {
-        perror("[Error] Failed to send response");
-    }
-
-    printf("[Infor] Response sent to client %s:%d\n", client_ip, ntohs(client_addr.sin_port));
-
+        printf("[Infor] Response sent to client %s:%d\n", client_ip, ntohs(client_addr.sin_port));
+    }while(success!= -1);
     close(client_socket);
     free(client_args);
     return NULL;
