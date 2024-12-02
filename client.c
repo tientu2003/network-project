@@ -5,7 +5,58 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include "msg.h"
-
+void login(int client_socket){
+    msg_format msg,response;
+    char username[30],password[30];
+    do{
+        printf("Enter username:");
+        scanf("%s",username);
+        printf("Enter password:");
+        scanf("%s",password);
+        snprintf(msg.payload, MAX_PAYLOAD_SIZE, "%s %s",username,password);
+        msg.header.type = 1; // AUTH_REQ
+        msg.header.code = 0;
+        msg.header.length = strlen(msg.payload);
+        msg.header.timestamp = (uint32_t)time(NULL);
+        if (send(client_socket, &msg, sizeof(msg), 0) <= 0) {
+            perror("Failed to send message");
+            close(client_socket);
+            exit(0);
+        }
+        ssize_t received = recv(client_socket, &response, sizeof(response), 0);
+        if (received <= 0) {
+            perror("Failed to receive response");
+        }
+        if(response.header.code==CODE_LOGIN_FAILED)printf("Wrong username or password.Please try again.\n");
+    }while(response.header.code!=CODE_LOGIN_SUCCESS);
+    printf("Login successful\n");
+}
+void registerAccount(int client_socket){
+    msg_format msg,response;
+    char username[30],password[30];
+    do{
+        printf("Enter username:");
+        scanf("%s",username);
+        printf("Enter password:");
+        scanf("%s",password);
+        snprintf(msg.payload, MAX_PAYLOAD_SIZE, "%s %s",username,password);
+        msg.header.type = REGI_REQ; // AUTH_REQ
+        msg.header.code = 0;
+        msg.header.length = strlen(msg.payload);
+        msg.header.timestamp = (uint32_t)time(NULL);
+        if (send(client_socket, &msg, sizeof(msg), 0) <= 0) {
+            perror("Failed to send message");
+            close(client_socket);
+            exit(0);
+        }
+        ssize_t received = recv(client_socket, &response, sizeof(response), 0);
+        if (received <= 0) {
+            perror("Failed to receive response");
+        }
+        if(response.header.code==CODE_REGISTRATION_FAILED)printf("Username has been used.Please try again.\n");
+    }while(response.header.code!=CODE_REGISTRATION_SUCCESS);
+    printf("Register successful\n");
+}
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <server_ip> <port>\n", argv[0]);
@@ -36,7 +87,11 @@ int main(int argc, char *argv[]) {
         close(client_socket);
         return EXIT_FAILURE;
     }
-
+    int authReq;
+    printf("Enter 0 for login or 1 for register:");
+    scanf("%d",&authReq);
+    if(authReq==0)login(client_socket);
+    else registerAccount(client_socket);
     // Prepare message
     msg.header.type = 1; // AUTH_REQ
     msg.header.code = 0; // No error
@@ -63,7 +118,6 @@ int main(int argc, char *argv[]) {
         printf("Timestamp: %s\n", ctime(&response.header.timestamp));
         printf("Payload: %s\n", response.payload);
     }
-
     close(client_socket);
     return 0;
 }

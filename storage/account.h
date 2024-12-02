@@ -18,32 +18,34 @@ int account_count = 0;
 
 
 int save_account(account* data){
-    FILE* file = fopen("account.txt", "a"); // Open the file in append mode
+    FILE* file = fopen("./storage/account.txt", "w"); // Open the file in append mode
     if (file == NULL) {
         printf("[Error] Unable to open file for saving.\n");
         return -1; // Error opening the file
     }
 
     // Write the account to the file
-    fprintf(file, "%d %s %s\n", data->id, data->user_name, data->password);
+    for(int i=0;i<account_count;i++){
+        fprintf(file, "%d %s %s\n", data[i].id, data[i].user_name, data[i].password);
+    }
     fclose(file);
     return 0; // Success
 }
 
-account* load_account(){
-    FILE* file = fopen("account.txt", "r"); // Open the file in read mode
+int load_account(account* accounts){
+    FILE* file = fopen("./storage/account.txt", "r"); // Open the file in read mode
     if (file == NULL) {
         printf("[Error] Unable to open file for loading.\n");
         account_count = 0;
-        return NULL; // Error opening the file
+        return -1; // Error opening the file
     }
 
-    account* accounts =  (account*) malloc(100 * sizeof(account)); // Allocate memory for up to 100 accounts
+    //account* accounts =  (account*) malloc(100 * sizeof(account)); // Allocate memory for up to 100 accounts
     if (accounts == NULL) {
         printf("[Error] Memory allocation failed.\n");
         fclose(file);
         account_count = 0;
-        return NULL;
+        return -1;
     }
 
     int index = 0;
@@ -53,10 +55,10 @@ account* load_account(){
                   accounts[index].password) !=EOF){
         index++;
     }
-
     fclose(file);
     account_count = index; // Set the total number of loaded accounts
-    return accounts; // Return the array of accounts
+    //return accounts; // Return the array of accounts
+    return 0;
 }
 
 int find_account(account* accounts, char* user_name) {

@@ -6,13 +6,58 @@
 #include <pthread.h>
 #include <time.h>
 #include "msg.h"
+#include "storage/account.h"
 
 // Thread argument structure
 typedef struct {
     int client_socket;
     struct sockaddr_in client_addr;
 } ClientArgs;
+account accounts[1000];
 
+int login(msg_format msg,int client_socket){
+    char username[30],password[30];
+    msg_format response;
+    sscanf(msg.payload,"%s %s",username,password);
+    if(check_credentials(accounts,username,password)){
+        response.header.code=CODE_LOGIN_SUCCESS;
+    }
+    else{
+        response.header.code=CODE_LOGIN_FAILED;
+    }
+    response.header.type=AUTH_RES;
+    response.header.length=0;
+    response.header.timestamp=(uint32_t)time(NULL);
+    if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+        perror("[Error] Failed to send response");
+    }
+    return (response.header.code==CODE_LOGIN_SUCCESS)?1:0;
+}
+int registerAccount(msg_format msg,int client_socket){
+    char username[30],password[30];
+    msg_format response;
+    sscanf(msg.payload,"%s %s",username,password);
+    int res;
+    res=find_account(accounts,username);
+    if(res>-1){
+        response.header.code=CODE_REGISTRATION_FAILED;
+    }
+    else{
+        response.header.code=CODE_REGISTRATION_SUCCESS;
+        accounts[account_count].id=account_count;
+        strcpy(accounts[account_count].user_name,username);
+        strcpy(accounts[account_count].password,password);
+        account_count++;
+        save_account(accounts);
+    }
+    response.header.type=REGI_RES;
+    response.header.length=0;
+    response.header.timestamp=(uint32_t)time(NULL);
+    if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+        perror("[Error] Failed to send response");
+    }
+    return (response.header.code==CODE_REGISTRATION_SUCCESS)?1:0;
+}
 // Handle client communication
 void *handle_client(void *arg) {
     ClientArgs *client_args = (ClientArgs *)arg;
@@ -24,22 +69,22 @@ void *handle_client(void *arg) {
     // Get client IP address
     inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
     printf("[Infor] Connected to client: %s:%d\n", client_ip, ntohs(client_addr.sin_port));
-
-    // Receive message from client
-    ssize_t received = recv(client_socket, &msg, sizeof(msg), 0);
-    if (received <= 0) {
-        perror("[Error] Failed to receive message");
-        close(client_socket);
-        free(client_args);
-        return NULL;
-    }
-
-    // Display received message
-    printf("[Infor] Received Message from %s:%d\n", client_ip, ntohs(client_addr.sin_port));
-    printf("[Infor] Type: %d, Code: %d, Length: %d, Timestamp: %s\n",
-           msg.header.type, msg.header.code, msg.header.length, ctime(&msg.header.timestamp));
-    printf("[Infor] Payload: %s\n", msg.payload);
-
+    int auth;
+    do{
+        ssize_t received = recv(client_socket, &msg, sizeof(msg), 0);
+        if (received <= 0) {
+            perror("[Error] Failed to receive message");
+            close(client_socket);
+            free(client_args);
+            return NULL;
+        }
+        if(msg.header.type==AUTH_REQ){
+            auth=login(msg,client_socket);
+        }
+        else if(msg.header.type==REGI_REQ){
+            auth=registerAccount(msg,client_socket);
+        }
+    }while(auth!=1);
     // Prepare and send response
     msg_format response;
     response.header.type = msg.header.type;
@@ -75,7 +120,7 @@ int main(int argc, char *argv[]) {
         perror("[Error] Socket creation failed");
         return EXIT_FAILURE;
     }
-
+    
     // Configure server address
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
@@ -96,7 +141,7 @@ int main(int argc, char *argv[]) {
     }
 
     printf("[Infor] Server listening on port %d...\n", port);
-
+    load_account(accounts);
     // Accept and handle multiple clients
     while (1) {
         addr_size = sizeof(client_addr);
@@ -129,7 +174,7 @@ int main(int argc, char *argv[]) {
         // Detach the thread to allow independent execution
         pthread_detach(thread_id);
     }
-
+    
     close(server_socket);
     return 0;
 }
