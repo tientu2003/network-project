@@ -84,5 +84,14 @@ bool check_credentials(account* accounts, char* user_name, char* password){
     }
     return false; // NOT FIND VALID USER_NAME
 }
-
+void list_user_online(int* result){
+    int online_cnt=0;
+    for(int i=0;i<account_count;i++){
+        if(accounts[i].is_online){
+            result[online_cnt]=i;
+            online_cnt++;
+        }
+    }
+    result[online_cnt]=-1;
+}
 #endif

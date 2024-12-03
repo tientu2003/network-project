@@ -41,18 +41,24 @@ void *handle_client(void *arg) {
                 success=server_register_account(msg,client_socket);
                 break;
             case USER_LIST_REQ:
+                success=server_get_online_user(client_socket);
                 break;
             case PRIVATE_MSG:
+                success=server_send_private_message(client_socket,msg);
                 break;
             case GROUP_MSG:
                 break;
             case MESSAGE_LIST_REQ:
+                success=server_get_messages(client_socket,msg);
                 break;
             case GROUP_REQ:
                 break;
             case FRIEND_REQ:
                 break;
             case LOGOUT_REQ:
+                break;
+            case ROOM_LIST_REQ:
+                success=server_get_room_with_user(client_socket,atoi(msg.payload));
                 break;
             default:
                 success = -1;
@@ -104,6 +110,7 @@ int main(int argc, char *argv[]) {
 
     printf("[Infor] Server listening on port %d...\n", port);
     load_account(accounts);
+    load_rooms_from_file(rooms);
     // Accept and handle multiple clients
     while (1) {
         addr_size = sizeof(client_addr);

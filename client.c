@@ -21,12 +21,15 @@ void function_menu(int client_socket, int user_id){
         }
         switch (choice) {
             case 1:
+                get_online_users(client_socket);
                 // Logic for list online user
                 break;
             case 2:
+                get_room_list(client_socket,user_id);
                 // Logic for list chat room
                 break;
             case 3:
+                enter_chat_room(client_socket,user_id);
                 // Logic for enter chat room to chat
                 break;
             case 4:
@@ -44,10 +47,6 @@ void function_menu(int client_socket, int user_id){
                 break;
         }
     }
-}
-
-void enter_room(int client_socket, int room_id, int user_id){
-
 }
 
 void enter_group_management(int client_socket, int user_id){

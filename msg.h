@@ -3,6 +3,8 @@
 #include <time.h>
 #include <stdio.h>
 #include "storage/account.h"
+#include "storage/room.h"
+#include "storage/message.h"
 
 #define MAX_PAYLOAD_SIZE 256  // Define a maximum payload size
 
@@ -25,7 +27,9 @@ typedef enum {
     GROUP_RES = 0x0C,        // Group action response
     FRIEND_REQ = 0x0D,       // Add/remove friend request
     FRIEND_RES = 0x0E,       // Add/remove friend response
-    LOGOUT_REQ = 0x0F        // LOGOUT_REQ
+    LOGOUT_REQ = 0x0F,       // LOGOUT_REQ
+    ROOM_LIST_REQ = 0x10,    //ROOM_LIST_REQ
+    ROOM_LIST_RES = 0x11     //ROOM_LIST_RES 
 } msg_type;
 
 // Enumeration for codes
@@ -62,6 +66,9 @@ int server_login(msg_format msg,int client_socket){
     sscanf(msg.payload,"%s %s",username,password);
     if(check_credentials(accounts,username,password)){
         response.header.code=CODE_LOGIN_SUCCESS;
+        int user_id=find_account(accounts,username);
+        sprintf(response.payload,"%d",user_id);
+        accounts[user_id].is_online=true;
     }
     else{
         response.header.code=CODE_LOGIN_FAILED;
@@ -100,6 +107,102 @@ int server_register_account(msg_format msg,int client_socket){
     }
     return (response.header.code==CODE_REGISTRATION_SUCCESS)?1:0;
 }
+int server_get_online_user(int client_socket){
+    int online_user_ids[1000];
+    list_user_online(online_user_ids);
+    msg_format response;
+    for(int i=0;i<1000;i++){
+        int id=online_user_ids[i];
+        if(id<0)break;
+        response.header.code=USER_LIST_RES;
+        response.header.type=CODE_NO_ERROR;
+        strcpy(response.payload,accounts[id].user_name);
+        response.header.length=strlen(response.payload);
+        response.header.timestamp=(uint32_t)time(NULL);
+        if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+            perror("[Error] Failed to send response");
+        }
+    }
+    response.header.code=USER_LIST_RES;
+    response.header.type=CODE_NO_ERROR;
+    response.header.length=0;
+    response.header.timestamp=(uint32_t)time(NULL);
+    if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+        perror("[Error] Failed to send response");
+    }
+    return 1;
+}
 
+int server_get_room_with_user(int client_socket,int user_id){
+    room room_list[1000];
+    msg_format response;
+    find_all_room_by_user_id(room_list,user_id);
+    for(int i=0;i<1000;i++){
+        if(room_list[i].member_count==0)break;
+        response.header.code=ROOM_LIST_RES;
+        response.header.type=CODE_NO_ERROR;
+        char room_id[10];
+        sprintf(room_id,"%d",room_list[i].room_id);
+        strcpy(response.payload,room_id);
+        for(int j=0;j<room_list[i].member_count;j++){
+            int member_id=room_list[i].member_ids[j];
+            strcat(response.payload," ");
+            strcat(response.payload,accounts[member_id].user_name);
+        }
+        response.header.length=strlen(response.payload);
+        response.header.timestamp=(uint32_t)time(NULL);
+        if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+            perror("[Error] Failed to send response");
+        }
+    }
+    response.header.code=ROOM_LIST_RES;
+    response.header.type=CODE_NO_ERROR;
+    response.header.length=0;
+    response.header.timestamp=(uint32_t)time(NULL);
+    if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+        perror("[Error] Failed to send response");
+    }
+    return 1;
+}
 
+int server_get_messages(int client_socket,msg_format msg){
+    int room_id = atoi(msg.payload);
+    msg_format response;
+    message messages[MAX_MESSAGE];
+    int message_count=load_message(messages,room_id);
+    
+    for(int i=0;i<message_count;i++){
+        response.header.type=MESSAGE_LIST_RES;
+        response.header.code=0;
+        int sender_id=messages[i].sender_id;
+        sprintf(response.payload,"%s | %s",accounts[sender_id].user_name,messages[i].content);
+        response.header.length=strlen(response.payload);
+        response.header.timestamp=(uint32_t)time(NULL);
+        if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+            perror("[Error] Failed to send response");
+        }
+    }
+    response.header.type=MESSAGE_LIST_RES;
+    response.header.code=0;
+    if(rooms[room_id].member_count>2)strcpy(response.payload,"1");
+    else strcpy(response.payload,"0");
+    response.header.length=1;
+    response.header.timestamp=(uint32_t)time(NULL);
+    if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+        perror("[Error] Failed to send response");
+    }
+    return 1;
+}
+
+int server_send_private_message(int client_socket,msg_format msg){
+    int room_id, userId;
+    char content[1000];
+    sscanf(msg.payload,"%d %d %s",&room_id,&userId,content);
+    message message;
+    strcpy(message.content,content);
+    message.time=msg.header.timestamp;
+    message.sender_id=userId;
+    create_message(room_id,&message);
+    return 1;
+}
 #endif
