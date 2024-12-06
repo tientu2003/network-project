@@ -15,12 +15,10 @@ typedef struct {
 
 room rooms[MAX_ROOMS];
 int room_count = 0;
-room result[MAX_ROOMS];
-int result_count = 0;
 
 // Hàm ghi toàn bộ danh sách rooms vào file
 void save_rooms_to_file() {
-    FILE *file = fopen("room.txt", "w");
+    FILE *file = fopen("./storage/room.txt", "w");
     if (!file) {
         perror("Error opening file");
         return;
@@ -38,7 +36,7 @@ void save_rooms_to_file() {
 
 // Hàm đọc danh sách rooms từ file
 void load_rooms_from_file() {
-    FILE *file = fopen("room.txt", "r");
+    FILE *file = fopen("./storage/room.txt", "r");
     if (!file) {
         perror("Error opening file");
         return;
@@ -65,8 +63,8 @@ room* find_all_member_in_room(int room_id) {
 }
 
 // Hàm tìm tất cả rooms mà user_id tham gia
-room* find_all_room_by_user_id(int user_id) {
-    result_count = 0;
+void find_all_room_by_user_id(room* result,int user_id) {
+    int result_count = 0;
     for (int i = 0; i < room_count; i++) {
         for (int j = 0; j < rooms[i].member_count; j++) {
             if (rooms[i].member_ids[j] == user_id) {
@@ -75,8 +73,6 @@ room* find_all_room_by_user_id(int user_id) {
             }
         }
     }
-
-    return result_count > 0 ? result : NULL;
 }
 
 // Hàm tạo room

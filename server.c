@@ -24,35 +24,49 @@ void *handle_client(void *arg) {
     // Get client IP address
     inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
     printf("[Infor] Connected to client: %s:%d\n", client_ip, ntohs(client_addr.sin_port));
-
-    // Receive message from client
-    ssize_t received = recv(client_socket, &msg, sizeof(msg), 0);
-    if (received <= 0) {
-        perror("[Error] Failed to receive message");
-        close(client_socket);
-        free(client_args);
-        return NULL;
-    }
-
-    // Display received message
-    printf("[Infor] Received Message from %s:%d\n", client_ip, ntohs(client_addr.sin_port));
-    printf("[Infor] Type: %d, Code: %d, Length: %d, Timestamp: %s\n",
-           msg.header.type, msg.header.code, msg.header.length, ctime(&msg.header.timestamp));
-    printf("[Infor] Payload: %s\n", msg.payload);
-
-    // Prepare and send response
-    msg_format response;
-    response.header.type = msg.header.type;
-    response.header.code = 0; // No error
-    response.header.length = snprintf(response.payload, MAX_PAYLOAD_SIZE, "Hello, client!");
-    response.header.timestamp = (uint32_t)time(NULL);
-
-    if (send(client_socket, &response, sizeof(response), 0) <= 0) {
-        perror("[Error] Failed to send response");
-    }
-
-    printf("[Infor] Response sent to client %s:%d\n", client_ip, ntohs(client_addr.sin_port));
-
+    int success;
+    do{
+        ssize_t received = recv(client_socket, &msg, sizeof(msg), 0);
+        if (received <= 0) {
+            perror("[Error] Failed to receive message");
+            close(client_socket);
+            free(client_args);
+            return NULL;
+        }
+        switch (msg.header.type) {
+            case AUTH_REQ:
+                success=server_login(msg,client_socket);
+                break;
+            case REGI_REQ:
+                success=server_register_account(msg,client_socket);
+                break;
+            case USER_LIST_REQ:
+                success=server_get_online_user(client_socket);
+                break;
+            case PRIVATE_MSG:
+                success=server_send_private_message(client_socket,msg);
+                break;
+            case GROUP_MSG:
+                break;
+            case MESSAGE_LIST_REQ:
+                success=server_get_messages(client_socket,msg);
+                break;
+            case GROUP_REQ:
+                break;
+            case FRIEND_REQ:
+                break;
+            case LOGOUT_REQ:
+                success=server_logout(client_socket,msg);
+                break;
+            case ROOM_LIST_REQ:
+                success=server_get_room_with_user(client_socket,atoi(msg.payload));
+                break;
+            default:
+                success = -1;
+                break;
+        }
+        printf("[Infor] Response sent to client %s:%d\n", client_ip, ntohs(client_addr.sin_port));
+    }while(success!= -1);
     close(client_socket);
     free(client_args);
     return NULL;
@@ -75,7 +89,7 @@ int main(int argc, char *argv[]) {
         perror("[Error] Socket creation failed");
         return EXIT_FAILURE;
     }
-
+    
     // Configure server address
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
@@ -96,7 +110,8 @@ int main(int argc, char *argv[]) {
     }
 
     printf("[Infor] Server listening on port %d...\n", port);
-
+    load_account(accounts);
+    load_rooms_from_file(rooms);
     // Accept and handle multiple clients
     while (1) {
         addr_size = sizeof(client_addr);
@@ -129,7 +144,7 @@ int main(int argc, char *argv[]) {
         // Detach the thread to allow independent execution
         pthread_detach(thread_id);
     }
-
+    
     close(server_socket);
     return 0;
 }
