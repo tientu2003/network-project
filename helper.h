@@ -186,5 +186,25 @@ void enter_chat_room(int client_socket,int user_id){
     }
     
 }
+void logout(int client_socket,int user_id){
+    msg_format msg,response;
+    msg.header.type=LOGOUT_REQ;
+    msg.header.code=0;
+    msg.header.timestamp = (uint32_t)time(NULL);
+    sprintf(msg.payload,"%d",user_id);
+    msg.header.length=strlen(msg.payload);
+    do{
+        if (send(client_socket, &msg, sizeof(msg), 0) <= 0) {
+            perror("Failed to send message");
+            close(client_socket);
+            exit(0);
+        }
+        ssize_t received = recv(client_socket, &response, sizeof(response), 0);
+        if (received <= 0) {
+            perror("Failed to receive response");
+        }
+    }while(response.header.code!=CODE_LOGOUT_SUCCESS);
+    printf("--------------Logout--------------\n\n");
+}
 
 #endif

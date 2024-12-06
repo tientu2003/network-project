@@ -56,6 +56,7 @@ void *handle_client(void *arg) {
             case FRIEND_REQ:
                 break;
             case LOGOUT_REQ:
+                success=server_logout(client_socket,msg);
                 break;
             case ROOM_LIST_REQ:
                 success=server_get_room_with_user(client_socket,atoi(msg.payload));

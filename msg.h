@@ -29,7 +29,8 @@ typedef enum {
     FRIEND_RES = 0x0E,       // Add/remove friend response
     LOGOUT_REQ = 0x0F,       // LOGOUT_REQ
     ROOM_LIST_REQ = 0x10,    //ROOM_LIST_REQ
-    ROOM_LIST_RES = 0x11     //ROOM_LIST_RES 
+    ROOM_LIST_RES = 0x11,    //ROOM_LIST_RES
+    LOGOUT_RES=0x12          //LOG_OUT_RES 
 } msg_type;
 
 // Enumeration for codes
@@ -203,6 +204,20 @@ int server_send_private_message(int client_socket,msg_format msg){
     message.time=msg.header.timestamp;
     message.sender_id=userId;
     create_message(room_id,&message);
+    return 1;
+}
+int server_logout(int client_socket,msg_format msg){
+    int user_id;
+    msg_format response;
+    sscanf(msg.payload,"%d",&user_id);
+    response.header.type=LOGOUT_RES;
+    response.header.code=CODE_LOGOUT_SUCCESS;
+    response.header.length=0;
+    response.header.timestamp=(uint32_t)time(NULL);
+    accounts[user_id].is_online=false;
+    if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+        perror("[Error] Failed to send response");
+    }
     return 1;
 }
 #endif

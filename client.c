@@ -33,19 +33,19 @@ void function_menu(int client_socket, int user_id){
                 // Logic for enter chat room to chat
                 break;
             case 4:
-
                 break;
             case 5:
 
                 break;
             case 6:
-
+                logout(client_socket,user_id);
                 break;
             default:
                 close(client_socket);
                 return;
                 break;
         }
+        if(choice==6)break;
     }
 }
 
