@@ -2,7 +2,6 @@ import pandas as pd
 import streamlit as st
 from ctypes import *
 import random
-import threading
 import os
 # Load the compiled C library
 if os.name == "nt":  # Windows
@@ -70,7 +69,6 @@ def fetch_online_user():
 def send_message(room_id,content):
     content_ctypes = c_char_p(content.encode('utf-8'))
     return lib.send_message(st.session_state['client_socket'],st.session_state['user_id'],room_id,content_ctypes)
-
 
 # Function to generate a consistent random color based on a user's name
 def generate_color_from_name(user_name):
