@@ -54,6 +54,7 @@ int load_account(account* accounts){
                   &accounts[index].id,
                   accounts[index].user_name,
                   accounts[index].password) !=EOF){
+        accounts[index].is_online = -1;
         index++;
     }
     fclose(file);
@@ -88,7 +89,7 @@ bool check_credentials(account* accounts, char* user_name, char* password){
 void list_user_online(int* result){
     int online_cnt=0;
     for(int i=0;i<account_count;i++){
-        if(accounts[i].is_online){
+        if(accounts[i].is_online != -1){
             result[online_cnt]=i;
             online_cnt++;
         }

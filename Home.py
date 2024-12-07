@@ -4,7 +4,8 @@ import os
 import sys
 import argparse
 
-from common import fetch_online_user
+import common
+from common import fetch_online_user, display_login_status
 
 # Configure app
 st.set_page_config(page_title="Chat App", layout="wide")
@@ -23,9 +24,7 @@ args, unknown = parser.parse_known_args(sys.argv[1:])
 
 # Check if socket is already created in session state, if not, create it
 if "client_socket" not in st.session_state:
-    # Create the socket
     st.session_state["client_socket"] = lib.socket_create(args.server_ip.encode(), ctypes.c_int(args.server_port))
-    st.success(f"Connecting to {args.server_ip}:{args.server_port}...")
 
 if "notification_socket" not in st.session_state:
     st.session_state["notification_socket"] = lib.socket_create(args.server_ip.encode(), ctypes.c_int(args.server_port))
@@ -60,7 +59,7 @@ if not st.session_state["logged_in"]:
 
         if login_button:
             user_id = authenticate(login_username, login_password)
-            if user_id > 0:  # Successful login
+            if user_id >= 0:  # Successful login
                 st.session_state["logged_in"] = True
                 st.session_state["username"] = login_username
                 st.session_state["user_id"] = user_id  # Store user_id
@@ -88,10 +87,16 @@ else:
     # After login, hide Login/Register and show welcome message or redirect
     st.success(f"Welcome, {st.session_state['username']}!")
 
+    display_login_status()
+
     fetch_online_user()
 
     # Optional logout button
-    if st.button("Logout"):
-        st.session_state["logged_in"] = False
-        st.session_state["username"] = None
-        st.rerun()
+    if st.button("Logout "):
+        if common.handle_logout() == 0:
+            st.error("Can not logout!!!")
+        else:
+            st.session_state["logged_in"] = False
+            st.session_state["username"] = None
+            st.session_state["user_id"] = None
+            st.rerun()

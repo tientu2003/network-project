@@ -120,7 +120,6 @@ int server_get_online_user(int client_socket){
         response.header.type=USER_LIST_RES;
         memset(response.payload, 0, sizeof(response.payload));
         sprintf(response.payload,"%d %s", accounts[id].id, accounts[id].user_name);
-//        strcpy(response.payload,accounts[id].user_name);
         response.header.length=strlen(response.payload);
         response.header.timestamp=(uint32_t)time(NULL);
         if (send(client_socket, &response, sizeof(response), 0) <= 0) {
@@ -139,16 +138,15 @@ int server_get_online_user(int client_socket){
 
 
 int server_get_room_with_user(int client_socket,int user_id){
-    room room_list[1000];
+    room room_list[MAX_ROOMS];
     msg_format response;
     find_all_room_by_user_id(room_list,user_id);
-    for(int i=0;i<1000;i++){
+    for(int i=0;i<MAX_ROOMS;i++){
         if(room_list[i].member_count==0)break;
         response.header.code=CODE_NO_ERROR;
         response.header.type=ROOM_LIST_RES;
         char room_id[10];
-        sprintf(room_id,"%d",room_list[i].room_id);
-        strcpy(response.payload,room_id);
+        sprintf(response.payload,"%d",room_list[i].room_id);
         for(int j=0;j<room_list[i].member_count;j++){
             int member_id=room_list[i].member_ids[j];
             strcat(response.payload," ");
@@ -189,9 +187,7 @@ int server_get_messages(int client_socket,msg_format msg){
     }
     response.header.type=MESSAGE_LIST_RES;
     response.header.code=0;
-    if(rooms[room_id].member_count>2)strcpy(response.payload,"1");
-    else strcpy(response.payload,"0");
-    response.header.length=1;
+    response.header.length=0;
     response.header.timestamp=(uint32_t)time(NULL);
     if (send(client_socket, &response, sizeof(response), 0) <= 0) {
         perror("[Error] Failed to send response");
@@ -219,7 +215,7 @@ int server_logout(int client_socket,msg_format msg){
     response.header.code=CODE_LOGOUT_SUCCESS;
     response.header.length=0;
     response.header.timestamp=(uint32_t)time(NULL);
-    accounts[user_id].is_online=false;
+    accounts[user_id].is_online=-1;
     if (send(client_socket, &response, sizeof(response), 0) <= 0) {
         perror("[Error] Failed to send response");
     }

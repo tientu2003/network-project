@@ -122,6 +122,7 @@ void get_room_list(int client_socket,int user_id){
     printf("\n");
     
 }
+
 int get_room_message(int client_socket, int room_id){
     int room_type;
     msg_format msg,response;
