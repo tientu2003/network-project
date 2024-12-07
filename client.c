@@ -4,67 +4,12 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <time.h>
-#include "helper.h"
-
-void function_menu(int client_socket, int user_id){
-    while(1){
-        int choice;
-        printf("---------------Menu---------------\n");
-        printf("1. List Online User\n");
-        printf("2. Chat List\n");
-        printf("3. Enter Chat\n");
-        printf("4. Add Friend\n");
-        printf("5. Group Management\n");
-        printf("6. Logout\n");
-        if(scanf("%d", &choice) != 1){
-            return;
-        }
-        switch (choice) {
-            case 1:
-                get_online_users(client_socket);
-                // Logic for list online user
-                break;
-            case 2:
-                get_room_list(client_socket,user_id);
-                // Logic for list chat room
-                break;
-            case 3:
-                enter_chat_room(client_socket,user_id);
-                // Logic for enter chat room to chat
-                break;
-            case 4:
-                break;
-            case 5:
-
-                break;
-            case 6:
-                logout(client_socket,user_id);
-                break;
-            default:
-                close(client_socket);
-                return;
-                break;
-        }
-        if(choice==6)break;
-    }
-}
-
-void enter_group_management(int client_socket, int user_id){
-
-}
+#include "msg.h"
 
 
-
-int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s <server_ip> <port>\n", argv[0]);
-        return EXIT_FAILURE;
-    }
-
+int socket_create(const char *server_ip, int port) {
     int client_socket;
     struct sockaddr_in server_addr;
-    char *server_ip = argv[1];
-    int server_port = atoi(argv[2]);
 
     // Create socket
     client_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -75,7 +20,7 @@ int main(int argc, char *argv[]) {
 
     // Configure server address
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(server_port);
+    server_addr.sin_port = htons(port);
     server_addr.sin_addr.s_addr = inet_addr(server_ip);
 
     // Connect to server
@@ -84,24 +29,85 @@ int main(int argc, char *argv[]) {
         close(client_socket);
         return EXIT_FAILURE;
     }
-    int authReq;
-    while(1){
-        printf("--------------Welcome-------------\n");
-        printf("1. Login\n");
-        printf("2. Register\n");
-        printf("Select: ");
+    return client_socket;
+}
 
-        if(scanf("%d",&authReq) != 1) break;
-        if(authReq == 1){
-            int user_id = login(client_socket);
-            function_menu(client_socket , user_id);
-        }else if (authReq == 2) {
-            register_account(client_socket);
-        }else{
+int login(int client_socket, char* username, char*password){
+    msg_format msg,response;
+    snprintf(msg.payload, MAX_PAYLOAD_SIZE, "%s %s",username,password);
+    msg.header.type = AUTH_REQ;
+    msg.header.code = 0;
+    msg.header.length = strlen(msg.payload);
+    msg.header.timestamp = (uint32_t)time(NULL);
+    if (send(client_socket, &msg, sizeof(msg), 0) <= 0) {
+        close(client_socket);
+    }
+    ssize_t received = recv(client_socket, &response, sizeof(response), 0);
+    if(response.header.code==CODE_LOGIN_FAILED) {
+        return 0;
+    }else{
+        int user_id=atoi(response.payload);
+        return user_id;
+    }
+}
+
+int register_account(int client_socket,char* username, char* password ){
+    msg_format msg,response;
+    snprintf(msg.payload, MAX_PAYLOAD_SIZE, "%s %s",username,password);
+    msg.header.type = REGI_REQ; // AUTH_REQ
+    msg.header.code = 0;
+    msg.header.length = strlen(msg.payload);
+    msg.header.timestamp = (uint32_t)time(NULL);
+    if (send(client_socket, &msg, sizeof(msg), 0) <= 0) {
+        close(client_socket);
+    }
+    ssize_t received = recv(client_socket, &response, sizeof(response), 0);
+
+    if(response.header.code==CODE_REGISTRATION_FAILED) {
+        return 0;
+    }else {
+        return 1;
+    }
+}
+
+typedef struct online_list{
+    int id;
+    char name[30];
+} onlineuserlist;
+
+onlineuserlist online_user[100];
+
+onlineuserlist* get_online_users(int client_socket, int* size) {
+
+    msg_format msg, response;
+    msg.header.type = USER_LIST_REQ;
+    msg.header.code = 0;
+    msg.header.timestamp = (uint32_t)time(NULL);
+
+    if (send(client_socket, &msg, sizeof(msg), 0) <= 0) {
+        perror("Failed to send message");
+        exit(1);
+    }
+
+    int cnt = 0;
+    while (1) {
+        ssize_t received = recv(client_socket, &response, sizeof(response), 0);
+        if (received <= 0) {
+            perror("Failed to receive response");
             break;
+        }
+        if (response.header.length == 0) {
+            break;
+        } else {
+            sscanf(response.payload, "%d %s", &online_user[cnt].id, online_user[cnt].name);
+            cnt++;
         }
     }
 
-    close(client_socket);
-    return 0;
+    *size = cnt;
+    return online_user;
 }
+
+
+
+

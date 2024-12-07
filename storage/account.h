@@ -11,7 +11,7 @@ typedef struct {
     int id;
     char user_name[30];
     char password[60];
-    bool is_online;
+    int is_online;
 } account;
 
 int account_count = 0;
@@ -84,6 +84,7 @@ bool check_credentials(account* accounts, char* user_name, char* password){
     }
     return false; // NOT FIND VALID USER_NAME
 }
+
 void list_user_online(int* result){
     int online_cnt=0;
     for(int i=0;i<account_count;i++){

@@ -4,32 +4,22 @@ CFLAGS = -Wall -pthread
 
 # Targets
 SERVER = server
-CLIENT = client
+CLIENT = client.so
 
 # Source files
 SERVER_SRC = server.c
 CLIENT_SRC = client.c
 
-# Object files
-SERVER_OBJ = $(SERVER_SRC:.c=.o)
-CLIENT_OBJ = $(CLIENT_SRC:.c=.o)
-
 # Default target
 all: $(SERVER) $(CLIENT)
+
 # Compile server
-$(SERVER): $(SERVER_OBJ)
-	$(CC) $(CFLAGS) -o $(SERVER) $(SERVER_OBJ)
-	rm -f server.o
+$(SERVER): $(SERVER_SRC)
+	$(CC) $(CFLAGS) -o $(SERVER) $(SERVER_SRC)
 
 # Compile client
-$(CLIENT): $(CLIENT_OBJ)
-	$(CC) $(CFLAGS) -o $(CLIENT) $(CLIENT_OBJ)
-	rm -f client.o
-
-
-# Compile .o files from .c files
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+$(CLIENT): $(CLIENT_SRC)
+	$(CC) -shared -fPIC -o $(CLIENT) $(CLIENT_SRC) $(CFLAGS)
 
 # Clean build files
 clean:
