@@ -3,7 +3,6 @@ import ctypes
 import os
 import sys
 import argparse
-
 import common
 from common import fetch_online_user, display_login_status
 
@@ -25,9 +24,6 @@ args, unknown = parser.parse_known_args(sys.argv[1:])
 # Check if socket is already created in session state, if not, create it
 if "client_socket" not in st.session_state:
     st.session_state["client_socket"] = lib.socket_create(args.server_ip.encode(), ctypes.c_int(args.server_port))
-
-if "notification_socket" not in st.session_state:
-    st.session_state["notification_socket"] = lib.socket_create(args.server_ip.encode(), ctypes.c_int(args.server_port))
 
 # Initialize session state for authentication
 if "logged_in" not in st.session_state:

@@ -1,25 +1,12 @@
 import streamlit as st
-import ctypes
 import os
+from streamlit_autorefresh import st_autorefresh
 import common
-import random
-
-# Function to generate a consistent random color based on a user's name
-def generate_color_from_name(user_name):
-    # Use the hash of the user's name to generate a numeric value
-    hash_value = hash(user_name)
-
-    # Use the hash value to generate a RGB color by manipulating the value
-    random.seed(hash_value)  # Seed the random number generator for consistency
-    color = "#{:02x}{:02x}{:02x}".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-
-    return color
-
+import ctypes
 if os.name == "nt":  # Windows
     lib = ctypes.CDLL("./client.dll")
 else:  # Linux/Mac
     lib = ctypes.CDLL("./client.so")
-
 class Mess(ctypes.Structure):
     _fields_ = [
         ('sender', ctypes.c_char * 30),
@@ -57,6 +44,7 @@ lib.get_room_list.restype = ctypes.POINTER(Rooms)
 if not st.session_state["logged_in"]:
     st.warning("You must log in to access the chat rooms!")
 else:
+
     # Call the library function to get the room list
     size = ctypes.c_int(0)
     res = lib.get_room_list(
@@ -99,6 +87,7 @@ else:
     selected_room_id = next(room['id'] for room in chat_rooms if room['name'] == selected_room)
     st.session_state['selected_room_id'] = selected_room_id
 
+
     # Initialize chat history for the selected room
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = {room['name']: [] for room in chat_rooms}
@@ -109,21 +98,28 @@ else:
 
     st.session_state.chat_history[selected_room] = fetch_messages(selected_room_id)
 
+    # Tự động refresh UI mỗi 2 giây
+    st_autorefresh(interval=2000)
+
     # Display chat messages
     for message in st.session_state.chat_history[selected_room]:
-        color = generate_color_from_name(message['sender'])
+        color = common.generate_color_from_name(message['sender'])
         sender = message["sender"]
         with st.chat_message(sender):
             st.markdown(f'<span style="color:{color}; font-weight:bold;">{sender}:</span> {message["content"]}', unsafe_allow_html=True)
 
     # Input and send message
     if user_input := st.chat_input("Type your message here..."):
-        # Add user message
-        st.session_state.chat_history[selected_room].append({"sender": {st.session_state['username']}, "content": user_input})
-        with st.chat_message(st.session_state['username']):
-            sender = st.session_state['username']
-            color = generate_color_from_name(sender)
-            st.markdown(f'<span style="color:{color}; font-weight:bold;">{sender}:</span> {user_input}', unsafe_allow_html=True)
+        if common.send_message(selected_room_id,user_input) == 0:
+            # Add user message
+            st.session_state.chat_history[selected_room].append({"sender": {st.session_state['username']}, "content": user_input})
+            with st.chat_message(st.session_state['username']):
+                sender = st.session_state['username']
+                color = common.generate_color_from_name(sender)
+                st.markdown(f'<span style="color:{color}; font-weight:bold;">{sender}:</span> {user_input}', unsafe_allow_html=True)
+        else:
+            st.toast("Failed to send message!!")
+
 
 
 

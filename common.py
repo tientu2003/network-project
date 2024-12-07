@@ -1,6 +1,8 @@
 import pandas as pd
 import streamlit as st
 from ctypes import *
+import random
+import threading
 import os
 # Load the compiled C library
 if os.name == "nt":  # Windows
@@ -65,28 +67,18 @@ def fetch_online_user():
             st.subheader("User Table")
             st.dataframe(df, height=350, width=500, hide_index= True)  # Scrollable dataframe
 
+def send_message(room_id,content):
+    content_ctypes = c_char_p(content.encode('utf-8'))
+    return lib.send_message(st.session_state['client_socket'],st.session_state['user_id'],room_id,content_ctypes)
 
 
-def render_notifications(notifications):
-    """Render notifications in the top-right corner using a popover."""
-    with st.container():
-        col1, col2, col3 = st.columns([0.6, 0.2, 0.2])
-        with col3:
-            if notifications:
-                with st.popover("🔔 Notifications"):
-                    for notification in notifications:
-                        st.write(f"**{notification['type']}**: {notification['message']}")
-            else:
-                with st.popover("🔔 Notifications", location="top-right", key="notification_popover"):
-                    st.write("No new notifications.")
+# Function to generate a consistent random color based on a user's name
+def generate_color_from_name(user_name):
+    # Use the hash of the user's name to generate a numeric value
+    hash_value = hash(user_name)
 
+    # Use the hash value to generate a RGB color by manipulating the value
+    random.seed(hash_value)  # Seed the random number generator for consistency
+    color = "#{:02x}{:02x}{:02x}".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
-def friend_request_notification(data):
-    return 0
-
-
-def not_group_notification(data):
-    return 0
-
-def new_message_notification(data):
-    return 0
+    return color

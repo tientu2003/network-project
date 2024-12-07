@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <time.h>
 #include <stdio.h>
@@ -64,7 +65,7 @@ typedef struct {
 int server_login(msg_format msg,int client_socket){
     char username[30],password[30];
     msg_format response;
-    sscanf(msg.payload,"%s %s",username,password);
+    sscanf(msg.payload,"%s %s", username,password);
     if(check_credentials(accounts,username,password)){
         response.header.code=CODE_LOGIN_SUCCESS;
         int user_id=find_account(accounts,username);
@@ -197,8 +198,8 @@ int server_get_messages(int client_socket,msg_format msg){
 
 int server_send_private_message(int client_socket,msg_format msg){
     int room_id, userId;
-    char content[1000];
-    sscanf(msg.payload,"%d %d %s",&room_id,&userId,content);
+    char content[1024];
+    sscanf(msg.payload,"%d %d %[^\n]",&userId,&room_id,content);
     message message;
     strcpy(message.content,content);
     message.time=msg.header.timestamp;

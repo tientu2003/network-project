@@ -32,7 +32,7 @@ int socket_create(const char *server_ip, int port) {
     return client_socket;
 }
 
-int login(int client_socket, char* username, char*password){
+int login(int client_socket, char* username, char*password , int message_socket){
     msg_format msg,response;
     snprintf(msg.payload, MAX_PAYLOAD_SIZE, "%s %s",username,password);
     msg.header.type = AUTH_REQ;
@@ -96,6 +96,7 @@ onlineuserlist* get_online_users(int client_socket, int* size) {
             perror("Failed to receive response");
             break;
         }
+        if(response.header.type != USER_LIST_RES) continue;
         if (response.header.length == 0) {
             break;
         } else {
@@ -158,6 +159,7 @@ room_list* get_room_list(int client_socket, int user_id, int* size){
         if (received <= 0) {
             perror("Failed to receive response");
         }
+        if(response.header.type != ROOM_LIST_RES) continue;
         if(response.header.length==0)break;
         else{
 
@@ -211,6 +213,7 @@ mess* get_history_messages(int client_socket, int room_id, int* size){
         if (received <= 0) {
             perror("Failed to receive response");
         }else{
+            if(response.header.type != MESSAGE_LIST_RES) continue;
             if(response.header.length == 0) break;
             // Parsing payload into mess struct
             sscanf(response.payload, "%s | %[^\n]",
@@ -221,4 +224,17 @@ mess* get_history_messages(int client_socket, int room_id, int* size){
     }
     *size = count;
     return message_data;
+}
+
+int send_message(int client_socket, int sender, int room_id, char* content){
+    msg_format msg;
+    msg.header.type = PRIVATE_MSG;
+    msg.header.timestamp = (uint32_t)time(NULL);
+    sprintf(msg.payload,"%d %d %s", sender, room_id, content);
+    msg.header.length = strlen(msg.payload);
+    if (send(client_socket, &msg, sizeof(msg), 0) <= 0) {
+        perror("Failed to send message");
+        return 1;
+    }
+    return 0;
 }
