@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 
     printf("[Infor] Server listening on port %d...\n", port);
     load_account(accounts);
-    load_rooms_from_file(rooms);
+    load_rooms_from_file();
     // Accept and handle multiple clients
     while (1) {
         addr_size = sizeof(client_addr);
