@@ -46,14 +46,17 @@ void *handle_client(void *arg) {
             case PRIVATE_MSG:
                 success=server_send_private_message(client_socket,msg);
                 break;
-            case GROUP_MSG:
+            case NOTIFICATION_MSG:
+                success=server_get_notifications(client_socket,msg);
                 break;
             case MESSAGE_LIST_REQ:
                 success=server_get_messages(client_socket,msg);
                 break;
             case GROUP_REQ:
+                success=handle_group_req(client_socket,msg);
                 break;
             case FRIEND_REQ:
+                success=handle_friend_req(client_socket,msg);
                 break;
             case LOGOUT_REQ:
                 success=server_logout(client_socket,msg);
@@ -112,6 +115,8 @@ int main(int argc, char *argv[]) {
     printf("[Infor] Server listening on port %d...\n", port);
     load_account(accounts);
     load_rooms_from_file();
+    load_friends_from_file();
+    load_notification_from_file();
     // Accept and handle multiple clients
     while (1) {
         addr_size = sizeof(client_addr);

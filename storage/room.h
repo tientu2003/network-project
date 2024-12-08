@@ -38,7 +38,7 @@ void save_rooms_to_file() {
 void load_rooms_from_file() {
     FILE *file = fopen("./storage/room.txt", "r");
     if (!file) {
-        perror("Error opening file");
+        perror("Error opening file room");
         return;
     }
 

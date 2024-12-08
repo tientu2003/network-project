@@ -6,8 +6,9 @@
 #include "storage/account.h"
 #include "storage/room.h"
 #include "storage/message.h"
-
-#define MAX_PAYLOAD_SIZE 256  // Define a maximum payload size
+#include "storage/notification.h"
+#include "storage/friend.h"
+#define MAX_PAYLOAD_SIZE 1024  // Define a maximum payload size
 
 #ifndef MSG_H
 #define MSG_H
@@ -19,7 +20,7 @@ typedef enum {
     USER_LIST_REQ = 0x03,    // Request for online users
     USER_LIST_RES = 0x04,    // Response with online users
     PRIVATE_MSG = 0x05,      // Direct message between users
-    GROUP_MSG = 0x06,        // Group message
+    NOTIFICATION_MSG = 0x06, // Notification message
     MESSAGE_LIST_REQ = 0x07, // Request for message list
     MESSAGE_LIST_RES = 0x08, // Response with message list
     REGI_REQ = 0x09,         // Registration request
@@ -222,4 +223,86 @@ int server_logout(int client_socket,msg_format msg){
     }
     return 1;
 }
+
+int handle_friend_req(int client_socket, msg_format msg){
+
+    int action;
+    int sender;
+    int receiver;
+    int confirm;
+    sscanf(msg.payload,"%d %d %d %d",&action,&sender,&receiver, &confirm);
+    printf("Received: %d %d %d %d\n",action, sender,receiver,confirm);
+    if(action == 0){ //get friend list
+        msg_format response;
+        response.header.type = FRIEND_RES;
+        response.header.code = CODE_NO_ERROR;
+        friend_t* temp = find_user(sender);
+        for(int i = 0; i< temp->friend_number;i++){
+            sprintf(response.payload,"%d %s", temp->friend_ids[i] ,accounts[temp->friend_ids[i]].user_name);
+            response.header.length = strlen(response.payload);
+            if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+                perror("[Error] Failed to send response");
+            }
+        }
+        sprintf(response.payload,"");
+        response.header.length = 0;
+        if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+            perror("[Error] Failed to send response");
+        }
+    }else if(action == 1){ // add friend
+        create_new_notification(receiver,0,sender);
+    }else if(action == 2){ // remove friend
+        delete_friend(sender, receiver);
+    }else if(action == 3){ // confirm friend request
+        if(confirm == 1){
+            add_friend(sender,receiver);
+            delete_notification(receiver, 0, sender);
+        }else{
+            delete_notification(receiver, 0, sender);
+        }
+    }
+    return 1;
+}
+
+
+int server_get_notifications(int client_socket, msg_format msg){
+    search_all_notification_by_user_id(atoi(msg.payload));
+    msg_format response;
+    response.header.type = NOTIFICATION_MSG;
+    response.header.code = CODE_NO_ERROR;
+    for(int i = 0; i< result_count;i++){
+        sprintf(response.payload,"%d %d %s", result[i].sender_id, result[i].type, accounts[result[i].sender_id].user_name);
+        response.header.length = strlen(response.payload);
+        if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+            perror("[Error] Failed to send response");
+        }
+    }
+
+    sprintf(response.payload,"");
+    response.header.length = 0;
+    if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+        perror("[Error] Failed to send response");
+    }
+    return 1;
+}
+
+int handle_group_req(int client_socket, msg_format msg){
+
+    int action;
+
+    int sender;
+
+    int target;
+
+    if(action == 0){
+
+    }else if(action == 1){
+
+    }else if(action == 2){
+
+    }
+
+    return 1;
+}
+
 #endif

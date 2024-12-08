@@ -238,3 +238,104 @@ int send_message(int client_socket, int sender, int room_id, char* content){
     }
     return 0;
 }
+
+typedef struct noti_data {
+    int sender;
+    int type;
+    char name[30];
+}noti_data;
+
+noti_data* get_notifications(int client_socket, int user_id, int* size){
+    msg_format msg,response;
+    static noti_data data[MAX_NOTIFICATION];
+    msg.header.type = NOTIFICATION_MSG;
+    sprintf(msg.payload,"%d", user_id);
+    if (send(client_socket, &msg, sizeof(msg), 0) <= 0) {
+        perror("Failed to send message");
+    }
+    int count = 0;
+    while(1){
+        ssize_t received = recv(client_socket, &response, sizeof(response), 0);
+        if(response.header.length == 0) break;
+        if (received <= 0) {
+            perror("Failed to receive response");
+        }else{
+            sscanf(response.payload,"%d %d %s", &data[count].sender, &data[count].type, data[count].name);
+            count++;
+        }
+    }
+    *size = count;
+    return data;
+}
+
+typedef struct friend {
+    int id;
+    char name[30];
+}friend;
+
+
+friend* get_friend_list(int client_socket, int sender, int* size) {
+    msg_format msg, response;
+    static friend data[100];
+    msg.header.type = FRIEND_REQ;
+    sprintf(msg.payload, "%d %d %d %d", 0, sender, 0, 0);
+    if (send(client_socket, &msg, sizeof(msg), 0) <= 0) {
+        perror("Failed to send message");
+    }
+    int count = 0;
+    while(1){
+        ssize_t received = recv(client_socket, &response, sizeof(response), 0);
+        if(response.header.length == 0) break;
+        if (received <= 0) {
+            perror("Failed to receive response");
+        }else{
+            sscanf(response.payload,"%d %s", &data[count].id, data[count].name);
+            count++;
+        }
+    }
+    *size = count;
+    return data;
+}
+
+
+
+int send_friend_cmd(int client_socket,int action , int sender, int receiver, int confirm){
+    msg_format msg;
+    msg.header.type = FRIEND_REQ;
+    msg.header.code = CODE_NO_ERROR;
+    sprintf(msg.payload,"%d %d %d %d", action, sender, receiver , confirm);
+    msg.header.length = strlen(msg.payload);
+    if (send(client_socket, &msg, sizeof(msg), 0) <= 0) {
+        perror("Failed to send message");
+    }
+    return 0;
+}
+
+char* get_group_list(int client_socket, int sender, int receiver){
+//    msg_format msg,response;
+//    static char friend_list[1024];
+//    msg.header.type = GROUP_REQ;
+//    sprintf(msg.payload,"%d %d %d %d", 0, sender, receiver , 0);
+//    if (send(client_socket, &msg, sizeof(msg), 0) <= 0) {
+//        perror("Failed to send message");
+//    }
+//    ssize_t received = recv(client_socket, &response, sizeof(response), 0);
+//    if (received <= 0) {
+//        perror("Failed to receive response");
+//    }else{
+//        strncpy(friend_list, response.payload, sizeof(friend_list) - 1);
+//    }
+//    return friend_list;
+    return NULL;
+}
+
+
+int send_group_cmd(int client_socket,int action , int sender, int room_id, int receiver, int confirm){
+    msg_format msg;
+    msg.header.type = GROUP_REQ;
+    sprintf(msg.payload,"%d %d %d %d %d", action, sender, room_id , receiver, confirm);
+    if (send(client_socket, &msg, sizeof(msg), 0) <= 0) {
+        perror("Failed to send message");
+    }
+    return 0;
+}

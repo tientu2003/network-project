@@ -15,9 +15,9 @@ int friend_count = 0;
 
 void load_friends_from_file(){
     // load from friend.txt into friends[MAX_FRIEND]
-    FILE *file = fopen("friend.txt", "r+");
+    FILE *file = fopen("./storage/friend.txt", "r+");
     if (!file) {
-        perror("Error opening file");
+        perror("Error opening file friend");
         return;
     }
 
@@ -33,9 +33,9 @@ void load_friends_from_file(){
 
 void save_friends_to_file() {
     // save friends[MAX_FRIEND] into friend.txt
-    FILE *file = fopen("friend.txt", "w+");
+    FILE *file = fopen("./storage/friend.txt", "w+");
     if (!file) {
-        perror("Error opening file");
+        perror("Error opening file friend");
         return;
     }
 
