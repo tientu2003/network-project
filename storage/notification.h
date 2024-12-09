@@ -8,6 +8,7 @@ typedef struct {
     int user_id;   // receiver
     int type;      // 0 for friend request, 1 for group invitation
     int sender_id; // sender request or invitation
+    int target;
 } notification;
 
 notification news[MAX_NOTIFICATION];
@@ -22,10 +23,11 @@ void load_notification_from_file() {
     }
 
     notification_count = 0; // Reset notification count for the user
-    while (fscanf(file, "%d %d %d\n",
+    while (fscanf(file, "%d %d %d %d\n",
                   &news[notification_count].user_id,
                   &news[notification_count].type,
-                  &news[notification_count].sender_id) !=EOF){
+                  &news[notification_count].sender_id,
+                  &news[notification_count].target) !=EOF){
         notification_count++;
         if (notification_count >= MAX_NOTIFICATION) {
             printf("Warning: Reached maximum notification limit.\n");
@@ -65,20 +67,21 @@ void save_notifications_to_file() {
     }
 
     for (int i = 0; i < notification_count; i++) {
-        fprintf(file, "%d %d %d\n", news[i].user_id, news[i].type, news[i].sender_id);
+        fprintf(file, "%d %d %d %d\n", news[i].user_id, news[i].type, news[i].sender_id, news[i].target);
     }
 
     fclose(file);
 }
 
 // Function to create a new notification and save to file
-void create_new_notification(int user_id, int type, int sender_id) {
+void create_new_notification(int user_id, int type, int sender_id, int target) {
 
     // Append to the notification array
     if (notification_count < MAX_NOTIFICATION) {
         news[notification_count].user_id = user_id;
         news[notification_count].type = type;
         news[notification_count].sender_id = sender_id;
+        news[notification_count].target = target;
         notification_count++;
         save_notifications_to_file();
     } else {
@@ -87,12 +90,12 @@ void create_new_notification(int user_id, int type, int sender_id) {
 }
 
 // Function to delete a notification and update the file
-int delete_notification(int user_id, int type, int sender_id) {
+int delete_notification(int user_id, int type, int sender_id,int target) {
     int deleted = 0;
 
     // Remove the notification from the array
     for (int i = 0; i < notification_count; i++) {
-        if (news[i].user_id == user_id && news[i].type == type && news[i].sender_id == sender_id) {
+        if (news[i].user_id == user_id && news[i].type == type && news[i].sender_id == sender_id && news[i].target == target) {
             // Shift all following notifications
             for (int j = i; j < notification_count - 1; j++) {
                 news[j] = news[j + 1];

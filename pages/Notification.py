@@ -14,6 +14,7 @@ else:  # Linux/Mac
 class NotiData(ctypes.Structure):
     _fields_ = [("sender", ctypes.c_int),
                 ("type", ctypes.c_int),
+                ("target", ctypes.c_int),
                 ("name", ctypes.c_char * 30)]  # name will be a byte string
 
 # Define function prototypes for the C functions
@@ -24,14 +25,22 @@ lib.get_notifications.restype = ctypes.POINTER(NotiData)
 lib.send_friend_cmd.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
 lib.send_friend_cmd.restype = ctypes.c_int
 
+
+lib.send_group_cmd.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+lib.send_group_cmd.restype = ctypes.c_int
+
 # Handle the response for each notification (e.g., sending the sender_id)
-def handle_accept(sender_id, t):
+def handle_accept(sender_id, t, target):
     if t == 0:
         lib.send_friend_cmd(st.session_state['client_socket'], 3, sender_id, st.session_state['user_id'], 1)
+    else:
+        lib.send_group_cmd(st.session_state['client_socket'], 4, sender_id, st.session_state['user_id'], target, 1)
     st.rerun()
-def handle_decline(sender_id, t):
+def handle_decline(sender_id, t, target):
     if t == 0:
         lib.send_friend_cmd(st.session_state['client_socket'], 3, sender_id, st.session_state['user_id'], 0)
+    else:
+        lib.send_group_cmd(st.session_state['client_socket'], 4, sender_id, st.session_state['user_id'],target,0 )
     st.rerun()
 
 def display_notification(notif):
@@ -46,13 +55,13 @@ def display_notification(notif):
         # Accept button
         if st.button("Accept", key=f"accept_{notif.sender}"):
             st.success(f"Accepted {notification_type} from {sender_name}")
-            handle_accept(notif.sender, notif.type)  # Call the accept function
+            handle_accept(notif.sender, notif.type, notif.target)  # Call the accept function
 
     with col2:
         # Decline button
         if st.button("Decline", key=f"decline_{notif.sender}"):
             st.error(f"Declined {notification_type} from {sender_name}")
-            handle_decline(notif.sender, notif.type)  # Call the decline function
+            handle_decline(notif.sender, notif.type,notif.target)  # Call the decline function
 
 if not st.session_state["logged_in"]:
     st.warning("You must log in to access the chat rooms!")

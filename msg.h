@@ -250,15 +250,16 @@ int handle_friend_req(int client_socket, msg_format msg){
             perror("[Error] Failed to send response");
         }
     }else if(action == 1){ // add friend
-        create_new_notification(receiver,0,sender);
+        create_new_notification(receiver,0,sender, -1);
     }else if(action == 2){ // remove friend
         delete_friend(sender, receiver);
     }else if(action == 3){ // confirm friend request
         if(confirm == 1){
             add_friend(sender,receiver);
-            delete_notification(receiver, 0, sender);
+            create_room(sender,receiver, 0);
+            delete_notification(receiver, 0, sender, -1);
         }else{
-            delete_notification(receiver, 0, sender);
+            delete_notification(receiver, 0, sender, -1);
         }
     }
     return 1;
@@ -271,7 +272,7 @@ int server_get_notifications(int client_socket, msg_format msg){
     response.header.type = NOTIFICATION_MSG;
     response.header.code = CODE_NO_ERROR;
     for(int i = 0; i< result_count;i++){
-        sprintf(response.payload,"%d %d %s", result[i].sender_id, result[i].type, accounts[result[i].sender_id].user_name);
+        sprintf(response.payload,"%d %d %d %s", result[i].sender_id, result[i].type, result[i].target, accounts[result[i].sender_id].user_name);
         response.header.length = strlen(response.payload);
         if (send(client_socket, &response, sizeof(response), 0) <= 0) {
             perror("[Error] Failed to send response");
@@ -287,19 +288,58 @@ int server_get_notifications(int client_socket, msg_format msg){
 }
 
 int handle_group_req(int client_socket, msg_format msg){
-
+    room data[MAX_ROOMS];
+    memset(data, 0, sizeof(data));
     int action;
-
     int sender;
-
+    int receiver;
     int target;
-
+    int confirm;
+    sscanf(msg.payload,"%d %d %d %d %d", &action, &sender,&receiver, &target,  &confirm);
+    msg_format response;
+    response.header.type = GROUP_RES;
+    response.header.code = CODE_NO_ERROR;
     if(action == 0){
+        // list all group of users
+        find_all_group_by_user_id(data,sender);
+        for(int i=0;i<MAX_ROOMS;i++){
+            if(data[i].member_count==0)break;
+            char room_id[10];
+            sprintf(response.payload,"%d",data[i].room_id);
+            for(int j=0;j<data[i].member_count;j++){
+                int member_id=data[i].member_ids[j];
+                strcat(response.payload," ");
+                strcat(response.payload,accounts[member_id].user_name);
+            }
+            response.header.length=strlen(response.payload);
+            response.header.timestamp=(uint32_t)time(NULL);
+            if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+                perror("[Error] Failed to send response");
+            }
+        }
+        response.header.length=0;
+        response.header.timestamp=(uint32_t)time(NULL);
+        if (send(client_socket, &response, sizeof(response), 0) <= 0) {
+            perror("[Error] Failed to send response");
+        }
 
     }else if(action == 1){
-
+        // create new room_id is treated as group chat
+        create_room(sender, 0, 1);
     }else if(action == 2){
-
+        // invite one people into group chat
+        create_new_notification(receiver, 1, sender , target);
+    }else if(action == 3){
+        // leave a room_id (group chat) of one user
+        remove_one_member_by_room_id(target,sender);
+    }else if(action == 4){
+        // confirm group invitation
+        if(confirm == 1){
+            add_member_into_room(target,receiver);
+            delete_notification(receiver, 1, sender, target);
+        }else{
+            delete_notification(receiver, 1, sender, target);
+        }
     }
 
     return 1;
