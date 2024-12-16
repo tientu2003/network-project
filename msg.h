@@ -99,8 +99,14 @@ int server_register_account(msg_format msg,int client_socket){
         accounts[account_count].id=account_count;
         strcpy(accounts[account_count].user_name,username);
         strcpy(accounts[account_count].password,password);
+        friend_t newFriend;
+        newFriend.user_id = account_count;
+        newFriend.friend_number = 0;
+        friends[friend_count++] = newFriend;
+        save_friends_to_file();
         account_count++;
         save_account(accounts);
+
     }
     response.header.type=REGI_RES;
     response.header.length=0;
@@ -142,6 +148,8 @@ int server_get_online_user(int client_socket){
 int server_get_room_with_user(int client_socket,int user_id){
     room room_list[MAX_ROOMS];
     msg_format response;
+    memset(&response, 0, sizeof(response));
+
     find_all_room_by_user_id(room_list,user_id);
     for(int i=0;i<MAX_ROOMS;i++){
         if(room_list[i].member_count==0)break;

@@ -162,24 +162,7 @@ room_list* get_room_list(int client_socket, int user_id, int* size){
         if(response.header.type != ROOM_LIST_RES) continue;
         if(response.header.length==0)break;
         else{
-
-            char buffer[MAX_PAYLOAD_SIZE];
-            strcpy(buffer, response.payload);
-            char *token = strtok(buffer, " ");
-            if (token != NULL) {
-                rooms[cnt].id = atoi(token); // Convert the first token to integer
-            }
-
-            // Extract the rest of the payload as the room name
-            token = strtok(NULL, ""); // Get the remaining part of the payload
-            if (token != NULL) {
-                strncpy(rooms[cnt].name, token, MAX_PAYLOAD_SIZE - 1);
-            }
-
-            size_t len = strlen(rooms[cnt].name);
-            if (len > 0 && rooms[cnt].name[len - 1] == ' ') {
-                rooms[cnt].name[len - 1] = '\0';
-            }
+            sscanf(response.payload,"%d %[^\n]",&rooms[cnt].id, rooms[cnt].name);
             cnt++;
         }
     }

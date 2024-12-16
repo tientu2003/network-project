@@ -1,4 +1,3 @@
-0 user1 password1
-1 user2 password2
-2 tientu tientu25012003
-3 user3 password3
+0 tientu tientu25012003
+1 kyht kyht
+2 tester 1234

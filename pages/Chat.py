@@ -34,7 +34,7 @@ def fetch_messages(room_id):
 class Rooms(ctypes.Structure):
     _fields_ = [
         ('id', ctypes.c_int),
-        ('name', ctypes.c_char * 256)
+        ('name', ctypes.c_char * 1024)
     ]
 
 # Configure argument and return types for the function
