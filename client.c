@@ -44,7 +44,7 @@ int login(int client_socket, char* username, char*password , int message_socket)
     }
     ssize_t received = recv(client_socket, &response, sizeof(response), 0);
     if(response.header.code==CODE_LOGIN_FAILED) {
-        return 0;
+        return -1;
     }else{
         int user_id=atoi(response.payload);
         return user_id;

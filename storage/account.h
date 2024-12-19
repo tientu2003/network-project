@@ -73,17 +73,17 @@ int find_account(account* accounts, char* user_name) {
 }
 
 // Check credentials for authentication
-bool check_credentials(account* accounts, char* user_name, char* password){
+int check_credentials(account* accounts, char* user_name, char* password){
     for(int i = 0; i < account_count; i++){
         if (strcmp(accounts[i].user_name, user_name) == 0){
             if(strcmp(accounts[i].password, password) == 0){
-                return true;
+                return 1;
             }else{
-                return false;
+                return 0;
             }
         }
     }
-    return false; // NOT FIND VALID USER_NAME
+    return 0; // NOT FIND VALID USER_NAME
 }
 
 void list_user_online(int* result){

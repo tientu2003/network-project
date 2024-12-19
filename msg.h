@@ -67,7 +67,8 @@ int server_login(msg_format msg,int client_socket){
     char username[30],password[30];
     msg_format response;
     sscanf(msg.payload,"%s %s", username,password);
-    if(check_credentials(accounts,username,password)){
+
+    if(check_credentials(accounts,username,password) == 1){
         response.header.code=CODE_LOGIN_SUCCESS;
         int user_id=find_account(accounts,username);
         sprintf(response.payload,"%d",user_id);
