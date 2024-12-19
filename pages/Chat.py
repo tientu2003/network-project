@@ -99,7 +99,7 @@ else:
     st.session_state.chat_history[selected_room] = fetch_messages(selected_room_id)
 
     # Tự động refresh UI mỗi 2 giây
-    st_autorefresh(interval=2000)
+    st_autorefresh(interval=3000)
 
     # Display chat messages
     for message in st.session_state.chat_history[selected_room]:
